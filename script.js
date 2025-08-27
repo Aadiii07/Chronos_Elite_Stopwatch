@@ -9,6 +9,14 @@ class Stopwatch {
         this.lapTimes = [];
         this.sessions = [];
         this.currentState = 'stopped'; // 'stopped', 'running', 'paused'
+        this.sessionStartTime = 0;
+        
+        // Chart data
+        this.chartData = [];
+        this.currentTimeframe = '1m';
+        this.lastUpdateTime = 0;
+        this.priceHistory = [];
+        this.volumeHistory = [];
         
         this.initializeElements();
         this.bindEvents();
@@ -16,6 +24,7 @@ class Stopwatch {
         this.updateDisplay();
         this.updateStats();
         this.updateHeaderStats();
+        this.initializeStockChart();
     }
     
     initializeElements() {
@@ -35,6 +44,15 @@ class Stopwatch {
         // Header stats elements
         this.totalSessionsElement = document.getElementById('totalSessions');
         this.totalTimeElement = document.getElementById('totalTime');
+        
+        // Stock chart elements
+        this.priceChart = document.getElementById('priceChart');
+        this.volumeChart = document.getElementById('volumeChart');
+        this.chartOverlay = document.getElementById('chartOverlay');
+        this.timeIndicator = document.getElementById('timeIndicator');
+        this.currentPrice = document.getElementById('currentPrice');
+        this.priceChange = document.getElementById('priceChange');
+        this.volume = document.getElementById('volume');
         
         // Stats elements
         this.todayTotal = document.getElementById('todayTotal');
@@ -66,6 +84,11 @@ class Stopwatch {
             btn.addEventListener('click', () => this.switchTab(btn.dataset.tab));
         });
         
+        // Timeframe selector
+        document.querySelectorAll('.tf-btn').forEach(btn => {
+            btn.addEventListener('click', () => this.changeTimeframe(btn.dataset.timeframe));
+        });
+        
         // Add button effects
         this.addButtonEffects();
     }
@@ -87,6 +110,279 @@ class Stopwatch {
         });
     }
     
+    initializeStockChart() {
+        this.createChartGrid();
+        this.updateChartDisplay();
+        this.startChartAnimation();
+    }
+    
+    createChartGrid() {
+        // Create horizontal grid lines for price chart
+        const priceChart = this.priceChart;
+        priceChart.innerHTML = '';
+        
+        for (let i = 0; i <= 4; i++) {
+            const gridLine = document.createElement('div');
+            gridLine.className = 'grid-line horizontal';
+            gridLine.style.top = `${(i * 25)}%`;
+            priceChart.appendChild(gridLine);
+            
+            // Add price labels
+            const priceLabel = document.createElement('div');
+            priceLabel.className = 'price-label';
+            priceLabel.style.top = `${(i * 25)}%`;
+            priceLabel.style.transform = 'translateY(-50%)';
+            priceLabel.textContent = this.formatTimeForChart((4 - i) * 15 * 60 * 1000); // 15 min intervals
+            priceChart.appendChild(priceLabel);
+        }
+        
+        // Create vertical grid lines
+        for (let i = 0; i <= 8; i++) {
+            const gridLine = document.createElement('div');
+            gridLine.className = 'grid-line vertical';
+            gridLine.style.left = `${(i * 12.5)}%`;
+            priceChart.appendChild(gridLine);
+        }
+        
+        // Create volume chart grid
+        const volumeChart = this.volumeChart;
+        volumeChart.innerHTML = '';
+        
+        for (let i = 0; i <= 2; i++) {
+            const gridLine = document.createElement('div');
+            gridLine.className = 'grid-line horizontal';
+            gridLine.style.top = `${(i * 33.33)}%`;
+            volumeChart.appendChild(gridLine);
+        }
+    }
+    
+    startChartAnimation() {
+        // Simulate real-time price updates
+        setInterval(() => {
+            if (this.isRunning) {
+                this.updateChartData();
+            }
+        }, 1000); // Update every second
+    }
+    
+    updateChartData() {
+        const now = Date.now();
+        const timeDiff = now - this.lastUpdateTime;
+        
+        if (timeDiff >= this.getTimeframeInterval()) {
+            this.lastUpdateTime = now;
+            
+            // Create new candlestick data
+            const open = this.priceHistory.length > 0 ? this.priceHistory[this.priceHistory.length - 1] : 0;
+            const close = this.elapsedTime;
+            const high = Math.max(open, close);
+            const low = Math.min(open, close);
+            const volume = Math.floor(Math.random() * 100) + 50; // Simulated volume
+            
+            const candlestick = {
+                open,
+                high,
+                low,
+                close,
+                volume,
+                timestamp: now,
+                isBullish: close > open
+            };
+            
+            this.chartData.push(candlestick);
+            this.priceHistory.push(close);
+            this.volumeHistory.push(volume);
+            
+            // Keep only recent data based on timeframe
+            const maxBars = this.getMaxBars();
+            if (this.chartData.length > maxBars) {
+                this.chartData.shift();
+                this.priceHistory.shift();
+                this.volumeHistory.shift();
+            }
+            
+            this.updateChartDisplay();
+            this.updateChartStats();
+        }
+    }
+    
+    getTimeframeInterval() {
+        switch(this.currentTimeframe) {
+            case '1m': return 60 * 1000; // 1 minute
+            case '5m': return 5 * 60 * 1000; // 5 minutes
+            case '15m': return 15 * 60 * 1000; // 15 minutes
+            case '1h': return 60 * 60 * 1000; // 1 hour
+            default: return 60 * 1000;
+        }
+    }
+    
+    getMaxBars() {
+        switch(this.currentTimeframe) {
+            case '1m': return 60; // 1 hour of data
+            case '5m': return 72; // 6 hours of data
+            case '15m': return 96; // 24 hours of data
+            case '1h': return 168; // 1 week of data
+            default: return 60;
+        }
+    }
+    
+    updateChartDisplay() {
+        this.renderCandlesticks();
+        this.renderVolumeBars();
+        this.updateTimeIndicator();
+    }
+    
+    renderCandlesticks() {
+        const priceChart = this.priceChart;
+        const chartHeight = 200;
+        const chartWidth = priceChart.offsetWidth;
+        
+        // Clear existing candlesticks
+        const existingCandlesticks = priceChart.querySelectorAll('.candlestick');
+        existingCandlesticks.forEach(candle => candle.remove());
+        
+        if (this.chartData.length === 0) return;
+        
+        // Calculate price range
+        const prices = this.priceHistory;
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        const priceRange = maxPrice - minPrice || 1;
+        
+        // Calculate bar width
+        const barWidth = Math.min(8, (chartWidth * 0.8) / this.chartData.length);
+        const barSpacing = (chartWidth * 0.8) / this.chartData.length;
+        
+        this.chartData.forEach((candle, index) => {
+            const candlestick = document.createElement('div');
+            candlestick.className = `candlestick ${candle.isBullish ? 'bullish' : 'bearish'}`;
+            
+            // Position
+            const x = (index * barSpacing) + (chartWidth * 0.1);
+            candlestick.style.left = `${x}px`;
+            candlestick.style.width = `${barWidth}px`;
+            
+            // Height and position based on price
+            const openY = chartHeight - ((candle.open - minPrice) / priceRange) * chartHeight;
+            const closeY = chartHeight - ((candle.close - minPrice) / priceRange) * chartHeight;
+            const highY = chartHeight - ((candle.high - minPrice) / priceRange) * chartHeight;
+            const lowY = chartHeight - ((candle.low - minPrice) / priceRange) * chartHeight;
+            
+            // Create candlestick body
+            const body = document.createElement('div');
+            body.className = 'candlestick-body';
+            body.style.height = `${Math.abs(closeY - openY)}px`;
+            body.style.top = `${Math.min(openY, closeY)}px`;
+            candlestick.appendChild(body);
+            
+            // Create wick
+            const wick = document.createElement('div');
+            wick.className = 'candlestick-wick';
+            wick.style.height = `${highY - lowY}px`;
+            wick.style.top = `${lowY}px`;
+            candlestick.appendChild(wick);
+            
+            priceChart.appendChild(candlestick);
+        });
+    }
+    
+    renderVolumeBars() {
+        const volumeChart = this.volumeChart;
+        const chartHeight = 100;
+        const chartWidth = volumeChart.offsetWidth;
+        
+        // Clear existing volume bars
+        const existingBars = volumeChart.querySelectorAll('.volume-bar');
+        existingBars.forEach(bar => bar.remove());
+        
+        if (this.volumeHistory.length === 0) return;
+        
+        // Calculate volume range
+        const volumes = this.volumeHistory;
+        const maxVolume = Math.max(...volumes);
+        
+        // Calculate bar width
+        const barWidth = Math.min(8, (chartWidth * 0.8) / this.volumeHistory.length);
+        const barSpacing = (chartWidth * 0.8) / this.volumeHistory.length;
+        
+        this.volumeHistory.forEach((volume, index) => {
+            const volumeBar = document.createElement('div');
+            volumeBar.className = 'volume-bar';
+            
+            // Position
+            const x = (index * barSpacing) + (chartWidth * 0.1);
+            volumeBar.style.left = `${x}px`;
+            volumeBar.style.width = `${barWidth}px`;
+            
+            // Height based on volume
+            const height = (volume / maxVolume) * chartHeight;
+            volumeBar.style.height = `${height}px`;
+            
+            volumeChart.appendChild(volumeBar);
+        });
+    }
+    
+    updateTimeIndicator() {
+        if (this.chartData.length === 0) return;
+        
+        const priceChart = this.priceChart;
+        const chartWidth = priceChart.offsetWidth;
+        const currentIndex = this.chartData.length - 1;
+        const barSpacing = (chartWidth * 0.8) / this.chartData.length;
+        
+        // Position indicator at current time
+        const x = (currentIndex * barSpacing) + (chartWidth * 0.1);
+        this.timeIndicator.style.left = `${x}px`;
+    }
+    
+    updateChartStats() {
+        if (this.chartData.length === 0) return;
+        
+        const currentCandle = this.chartData[this.chartData.length - 1];
+        const previousCandle = this.chartData[this.chartData.length - 2];
+        
+        // Update current price
+        this.currentPrice.textContent = this.formatTime(currentCandle.close);
+        
+        // Update price change
+        if (previousCandle) {
+            const change = currentCandle.close - previousCandle.close;
+            const changeText = this.formatTime(Math.abs(change));
+            this.priceChange.textContent = `${change >= 0 ? '+' : '-'}${changeText}`;
+            this.priceChange.style.color = change >= 0 ? 'var(--bullish)' : 'var(--bearish)';
+        } else {
+            this.priceChange.textContent = '+00:00';
+            this.priceChange.style.color = 'var(--neutral)';
+        }
+        
+        // Update volume
+        this.volume.textContent = currentCandle.volume;
+    }
+    
+    changeTimeframe(timeframe) {
+        // Update active button
+        document.querySelectorAll('.tf-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelector(`[data-timeframe="${timeframe}"]`).classList.add('active');
+        
+        this.currentTimeframe = timeframe;
+        this.lastUpdateTime = Date.now();
+        
+        // Clear existing data and restart
+        this.chartData = [];
+        this.priceHistory = [];
+        this.volumeHistory = [];
+        
+        this.updateChartDisplay();
+    }
+    
+    formatTimeForChart(time) {
+        const minutes = Math.floor(time / (1000 * 60));
+        const seconds = Math.floor((time % (1000 * 60)) / 1000);
+        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
     toggleMainButton() {
         switch(this.currentState) {
             case 'stopped':
@@ -105,6 +401,7 @@ class Stopwatch {
         this.isRunning = true;
         this.currentState = 'running';
         this.startTime = Date.now() - this.elapsedTime;
+        this.sessionStartTime = Date.now();
         this.intervalId = setInterval(() => this.updateTime(), 10);
         
         this.updateMainButton('pause');
@@ -113,6 +410,9 @@ class Stopwatch {
         
         // Add visual feedback
         this.addRunningAnimation();
+        
+        // Start chart updates
+        this.lastUpdateTime = Date.now();
     }
     
     pause() {
@@ -153,6 +453,12 @@ class Stopwatch {
         this.elapsedTime = 0;
         this.lapTimes = [];
         this.startTime = 0;
+        this.sessionStartTime = 0;
+        
+        // Clear chart data
+        this.chartData = [];
+        this.priceHistory = [];
+        this.volumeHistory = [];
         
         this.updateMainButton('start');
         this.resetBtn.disabled = true;
@@ -161,6 +467,8 @@ class Stopwatch {
         
         this.updateDisplay();
         this.updateLapDisplay();
+        this.updateChartDisplay();
+        this.updateChartStats();
     }
     
     updateMainButton(state) {
@@ -474,7 +782,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // Add clean CSS animations for the white theme
+    // Add enhanced CSS animations for the stock market chart
     const style = document.createElement('style');
     style.textContent = `
         .btn-main.btn-pause {
@@ -524,6 +832,46 @@ document.addEventListener('DOMContentLoaded', () => {
         .stopwatch-container:hover,
         .stats-container:hover {
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        .candlestick {
+            transition: all 0.3s ease;
+        }
+        
+        .candlestick:hover {
+            transform: scale(1.1);
+            z-index: 10;
+        }
+        
+        .volume-bar {
+            transition: all 0.3s ease;
+        }
+        
+        .volume-bar:hover {
+            transform: scale(1.1);
+            z-index: 10;
+        }
+        
+        .time-indicator {
+            animation: pulse-indicator 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse-indicator {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+        
+        .tf-btn {
+            transition: all 0.3s ease;
+        }
+        
+        .tf-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .tf-btn.active {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
         }
     `;
     document.head.appendChild(style);

@@ -33,6 +33,15 @@
     --radius: 12px;
     --radius-lg: 16px;
     --radius-xl: 20px;
+    
+    /* Stock chart colors */
+    --bullish: #10b981;
+    --bearish: #ef4444;
+    --neutral: #6b7280;
+    --chart-bg: #f8fafc;
+    --grid-line: #e2e8f0;
+    --price-line: #3b82f6;
+    --volume-bg: rgba(59, 130, 246, 0.1);
 }
 
 body {
@@ -143,6 +152,256 @@ body {
     margin-bottom: 30px;
     box-shadow: var(--shadow);
     text-align: center;
+}
+
+/* Stock Market Chart */
+.stock-chart-container {
+    margin-bottom: 40px;
+    padding: 30px;
+    background: var(--chart-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.chart-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.chart-title i {
+    color: var(--primary-color);
+    font-size: 1.5rem;
+}
+
+.chart-stats {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.chart-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    min-width: 80px;
+}
+
+.chart-stat .stat-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.chart-stat .stat-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+
+.chart-area {
+    position: relative;
+    height: 300px;
+    background: white;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.price-chart {
+    height: 200px;
+    position: relative;
+    background: var(--chart-bg);
+    border-bottom: 1px solid var(--border);
+}
+
+.volume-chart {
+    height: 100px;
+    position: relative;
+    background: var(--chart-bg);
+}
+
+.chart-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.time-indicator {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--primary-color);
+    opacity: 0.8;
+    transition: left 0.3s ease;
+}
+
+/* Candlestick Styles */
+.candlestick {
+    position: absolute;
+    width: 8px;
+    background: var(--bullish);
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+.candlestick.bearish {
+    background: var(--bearish);
+}
+
+.candlestick-body {
+    position: absolute;
+    width: 100%;
+    background: inherit;
+    border-radius: 2px;
+}
+
+.candlestick-wick {
+    position: absolute;
+    width: 2px;
+    background: inherit;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Volume Bar Styles */
+.volume-bar {
+    position: absolute;
+    bottom: 0;
+    width: 8px;
+    background: var(--volume-bg);
+    border: 1px solid var(--primary-color);
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+/* Chart Controls */
+.chart-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.timeframe-selector {
+    display: flex;
+    gap: 8px;
+}
+
+.tf-btn {
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    background: white;
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--text-secondary);
+}
+
+.tf-btn:hover {
+    border-color: var(--border-hover);
+    background: var(--surface-hover);
+}
+
+.tf-btn.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.chart-legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+.legend-color.green {
+    background: var(--bullish);
+}
+
+.legend-color.red {
+    background: var(--bearish);
+}
+
+/* Grid Lines */
+.chart-grid {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.grid-line {
+    position: absolute;
+    background: var(--grid-line);
+    opacity: 0.3;
+}
+
+.grid-line.horizontal {
+    width: 100%;
+    height: 1px;
+}
+
+.grid-line.vertical {
+    height: 100%;
+    width: 1px;
+}
+
+/* Price Labels */
+.price-label {
+    position: absolute;
+    right: 10px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    background: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
 }
 
 .time-display-section {
@@ -670,6 +929,46 @@ body {
         padding: 25px;
     }
     
+    .stock-chart-container {
+        padding: 20px;
+    }
+    
+    .chart-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+    
+    .chart-stats {
+        justify-content: center;
+    }
+    
+    .chart-area {
+        height: 250px;
+    }
+    
+    .price-chart {
+        height: 150px;
+    }
+    
+    .volume-chart {
+        height: 100px;
+    }
+    
+    .chart-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+    
+    .timeframe-selector {
+        justify-content: center;
+    }
+    
+    .chart-legend {
+        justify-content: center;
+    }
+    
     .time-display {
         gap: 15px;
         padding: 20px;
@@ -783,5 +1082,17 @@ body {
     
     .btn-clear {
         width: 100%;
+    }
+    
+    .chart-area {
+        height: 200px;
+    }
+    
+    .price-chart {
+        height: 120px;
+    }
+    
+    .volume-chart {
+        height: 80px;
     }
 }
