@@ -1,20 +1,226 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>To-Do List</title>
-  <link rel="stylesheet" href="style.css"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronos Elite</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="container">
-    <h1>My To-Do List</h1>
-    <form id="todo-form">
-      <input type="text" id="todo-input" placeholder="Add a new task" required />
-      <button type="submit">Add</button>
-    </form>
-    <ul id="todo-list"></ul>
-  </div>
-  <script src="script.js"></script>
+    <div class="container">
+        <header class="app-header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <div class="logo-icon">
+                        <i class="fas fa-stopwatch"></i>
+                    </div>
+                    <div class="logo-text">
+                        <h1>Chronos Elite</h1>
+                        <p class="subtitle">Precise Time Tracking & Analytics</p>
+                    </div>
+                </div>
+                <div class="header-stats">
+                    <div class="stat-badge">
+                        <span class="stat-number" id="totalSessions">0</span>
+                        <span class="stat-label">Total Sessions</span>
+                    </div>
+                    <div class="stat-badge">
+                        <span class="stat-number" id="totalTime">00:00</span>
+                        <span class="stat-label">Total Time</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <main>
+            <div class="stopwatch-container">
+                <div class="time-display-section">
+                    <div class="time-display">
+                        <div class="time-unit">
+                            <div class="time-circle">
+                                <span class="number" id="hours">00</span>
+                            </div>
+                            <span class="label">Hours</span>
+                        </div>
+                        <div class="separator">:</div>
+                        <div class="time-unit">
+                            <div class="time-circle">
+                                <span class="number" id="minutes">00</span>
+                            </div>
+                            <span class="label">Minutes</span>
+                        </div>
+                        <div class="separator">:</div>
+                        <div class="time-unit">
+                            <div class="time-circle">
+                                <span class="number" id="seconds">00</span>
+                            </div>
+                            <span class="label">Seconds</span>
+                        </div>
+                        <div class="separator">.</div>
+                        <div class="time-unit">
+                            <div class="time-circle milliseconds">
+                                <span class="number" id="milliseconds">00</span>
+                            </div>
+                            <span class="label">ms</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="controls-section">
+                    <div class="main-control">
+                        <button id="mainBtn" class="btn btn-main">
+                            <i class="fas fa-play"></i>
+                            <span class="btn-text">Start</span>
+                        </button>
+                    </div>
+                    
+                    <div class="secondary-controls">
+                        <button id="resetBtn" class="btn btn-secondary">
+                            <i class="fas fa-redo"></i>
+                            <span>Reset</span>
+                        </button>
+                        <button id="lapBtn" class="btn btn-lap" disabled>
+                            <i class="fas fa-flag"></i>
+                            <span>Lap</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="lap-section">
+                    <div class="lap-header">
+                        <h3><i class="fas fa-list"></i> Lap Times</h3>
+                        <div class="lap-counter">
+                            <span class="lap-count" id="lapCount">0</span>
+                            <span class="lap-label">laps</span>
+                        </div>
+                    </div>
+                    <div class="lap-times" id="lapTimes">
+                        <div class="empty-state">
+                            <div class="empty-icon">
+                                <i class="fas fa-flag"></i>
+                            </div>
+                            <p>No lap times recorded yet</p>
+                            <small>Click Lap while timing to record intermediate times</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stats-container">
+                <div class="stats-tabs">
+                    <button class="tab-btn active" data-tab="overview">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Overview</span>
+                    </button>
+                    <button class="tab-btn" data-tab="weekly">
+                        <i class="fas fa-calendar-week"></i>
+                        <span>Weekly</span>
+                    </button>
+                    <button class="tab-btn" data-tab="monthly">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Monthly</span>
+                    </button>
+                    <button class="tab-btn" data-tab="history">
+                        <i class="fas fa-history"></i>
+                        <span>History</span>
+                    </button>
+                </div>
+                
+                <div class="tab-content active" id="overview">
+                    <h3>Today's Overview</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card primary">
+                            <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                            <div class="stat-value" id="todayTotal">00:00:00</div>
+                            <div class="stat-label">Total Time Today</div>
+                        </div>
+                        <div class="stat-card success">
+                            <div class="stat-icon"><i class="fas fa-play-circle"></i></div>
+                            <div class="stat-value" id="todaySessions">0</div>
+                            <div class="stat-label">Sessions Today</div>
+                        </div>
+                        <div class="stat-card info">
+                            <div class="stat-icon"><i class="fas fa-chart-bar"></i></div>
+                            <div class="stat-value" id="todayAverage">00:00:00</div>
+                            <div class="stat-label">Average Session</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="weekly">
+                    <h3>Weekly Statistics</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card primary">
+                            <div class="stat-icon"><i class="fas fa-calendar-week"></i></div>
+                            <div class="stat-value" id="weeklyTotal">00:00:00</div>
+                            <div class="stat-label">Total Time</div>
+                        </div>
+                        <div class="stat-card success">
+                            <div class="stat-icon"><i class="fas fa-list-ol"></i></div>
+                            <div class="stat-value" id="weeklySessions">0</div>
+                            <div class="stat-label">Sessions</div>
+                        </div>
+                        <div class="stat-card info">
+                            <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+                            <div class="stat-value" id="weeklyAverage">00:00:00</div>
+                            <div class="stat-label">Average</div>
+                        </div>
+                    </div>
+                    <div class="chart-placeholder">
+                        <i class="fas fa-chart-area"></i>
+                        <p>Weekly activity chart coming soon</p>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="monthly">
+                    <h3>Monthly Statistics</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card primary">
+                            <div class="stat-icon"><i class="fas fa-calendar-alt"></i></div>
+                            <div class="stat-value" id="monthlyTotal">00:00:00</div>
+                            <div class="stat-label">Total Time</div>
+                        </div>
+                        <div class="stat-card success">
+                            <div class="stat-icon"><i class="fas fa-list-ol"></i></div>
+                            <div class="stat-value" id="monthlySessions">0</div>
+                            <div class="stat-label">Sessions</div>
+                        </div>
+                        <div class="stat-card info">
+                            <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+                            <div class="stat-value" id="monthlyAverage">00:00:00</div>
+                            <div class="stat-label">Average</div>
+                        </div>
+                    </div>
+                    <div class="chart-placeholder">
+                        <i class="fas fa-chart-area"></i>
+                        <p>Monthly activity chart coming soon</p>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="history">
+                    <div class="history-header">
+                        <h3>Session History</h3>
+                        <button id="clearHistory" class="btn btn-clear">
+                            <i class="fas fa-trash"></i>
+                            <span>Clear History</span>
+                        </button>
+                    </div>
+                    <div class="history-list" id="historyList">
+                        <div class="empty-state">
+                            <div class="empty-icon">
+                                <i class="fas fa-history"></i>
+                            </div>
+                            <p>No sessions recorded yet</p>
+                            <small>Start timing to see your session history</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="script.js"></script>
 </body>
 </html>
